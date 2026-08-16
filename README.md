@@ -100,6 +100,32 @@ from cvmate import Screen, DebugConfig
 screen = Screen(debug=DebugConfig(enabled=True, save_annotated=True))
 ```
 
+## GUI companion (optional)
+
+A Sikuli-IDE-style desktop app for writing scripts and capturing template
+images, without leaving the keyboard: open/edit/save/run plain `.py`
+scripts, and drag-select a region of your actual screen to save it as a
+template and auto-insert `Pattern("images/...")` at your cursor — e.g. type
+`screen.exists(`, invoke the capture tool, and it fills in
+`screen.exists(Pattern("images/ok_button.png"))` for you. Scripts stay
+ordinary Python using the same API described above; the GUI never replaces
+it. It's an optional extra — `pip install cvmate` alone never pulls in Qt.
+
+```bash
+pip install -e .[gui]
+cvmate-gui
+```
+
+- **Capture → script**: drag a rectangle on screen, name the template, and
+  it's saved to an `images/` folder next to your open script (save the
+  script first — that's where the tool knows to put things) and inserted
+  as a `Pattern(...)` snippet at your cursor.
+- **Run / Stop**: runs the saved script as a real subprocess (so a hung or
+  crashing script never takes the editor down with it), streaming its
+  output live. "Debug" / "Save annotated" checkboxes just set
+  `CVMATE_DEBUG` / `CVMATE_DEBUG_SAVE` for that run — the same environment
+  variables described above, no separate debug mechanism.
+
 ## Extensibility
 
 Screen capture and mouse input each sit behind an abstract interface
@@ -122,11 +148,26 @@ sample images checked into `tests/assets/` — no live screen or game
 required. Tests exercising the real Windows capture/input backends live
 under `tests/integration/` and are excluded from the default test run.
 
+GUI tests run headlessly too (no real display needed), via `pytest-qt`'s
+offscreen Qt platform:
+
+```bash
+pip install -e .[gui-dev]
+QT_QPA_PLATFORM=offscreen pytest tests/gui   # on Windows: set QT_QPA_PLATFORM=offscreen first
+```
+
+What's *not* covered headlessly — the capture overlay actually rendering
+and receiving real drag input, hide-before-grab timing against a real
+compositor, and DPI/scaling correctness on a real mixed-DPI multi-monitor
+Windows setup — needs manual verification on a real desktop.
+
 ## Project layout
 
 ```
 src/cvmate/       core library (capture, matching, input, scripting API)
-tests/unit/       offline unit tests
+src/cvmate/gui/   optional GUI companion app (editor, capture tool, runner)
+tests/unit/       offline unit tests for the core library
+tests/gui/        headless (offscreen) unit tests for the GUI
 tests/assets/     small synthetic images used by the unit tests
 examples/         runnable example scripts
 ```
