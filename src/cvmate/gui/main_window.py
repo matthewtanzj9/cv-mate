@@ -27,6 +27,7 @@ from .capture_controller import CaptureController
 from .editor import ScriptEditor
 from .highlighter import PythonHighlighter
 from .run_controller import RunController
+from .template_preview import TemplatePreviewPanel
 
 API_REFERENCE_DOCK_WIDTH = 340
 
@@ -55,6 +56,7 @@ class MainWindow(QMainWindow):
         self.run_controller = RunController(self)
 
         self._build_api_reference_dock()
+        self._build_template_preview_dock()
         self._build_menu()
         self._build_toolbar()
         self._wire_signals()
@@ -85,6 +87,22 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.api_reference_dock)
         self.resizeDocks([self.api_reference_dock], [API_REFERENCE_DOCK_WIDTH], Qt.Orientation.Horizontal)
 
+    def _build_template_preview_dock(self) -> None:
+        """A "Template Preview" panel stacked below the API Reference dock,
+        showing the actual image whatever Pattern(...) call the cursor is
+        on/near refers to — updates live as you move around the script."""
+        self.template_preview_panel = TemplatePreviewPanel(self.editor, self)
+
+        self.template_preview_dock = QDockWidget("Template Preview", self)
+        self.template_preview_dock.setWidget(self.template_preview_panel)
+        self.template_preview_dock.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetClosable
+            | QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+        )
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.template_preview_dock)
+        self.splitDockWidget(self.api_reference_dock, self.template_preview_dock, Qt.Orientation.Vertical)
+
     def _build_menu(self) -> None:
         file_menu = self.menuBar().addMenu("&File")
 
@@ -101,6 +119,7 @@ class MainWindow(QMainWindow):
 
         view_menu = self.menuBar().addMenu("&View")
         view_menu.addAction(self.api_reference_dock.toggleViewAction())
+        view_menu.addAction(self.template_preview_dock.toggleViewAction())
 
     def _build_toolbar(self) -> None:
         toolbar = QToolBar("Main", self)

@@ -143,6 +143,10 @@ cvmate-gui
   variables described above, no separate debug mechanism.
 - **API Reference panel**: a docked, always-available reference for the
   scripting API (toggle via **View → API Reference**).
+- **Template Preview panel**: shows the actual image whatever
+  `Pattern(...)` call your cursor is on/near refers to, live as you move
+  around the script — no alt-tabbing to a file browser to remember what an
+  icon looks like (toggle via **View → Template Preview**).
 
 ## Extensibility
 
