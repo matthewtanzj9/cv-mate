@@ -15,7 +15,7 @@ import numpy as np
 
 from .capture import CaptureBackend, default_capture_backend
 from .config import DebugConfig
-from .debug import get_logger, save_annotated
+from .debug import ensure_visible_when_enabled, get_logger, save_annotated
 from .exceptions import CvMateTimeoutError, InvalidRegionError, PatternNotFoundError
 from .input import InputController, default_input_controller
 from .matching import Matcher, TemplateScaleMatcher
@@ -52,6 +52,7 @@ class Region:
         self.height = height
 
         self._debug = debug if debug is not None else DebugConfig.from_env()
+        ensure_visible_when_enabled(self._debug.enabled)
         self._capture = capture
         self._matcher = matcher
         self._input_controller = input_controller
@@ -131,9 +132,17 @@ class Region:
         return [Match(result, region=self) for result in results]
 
     def exists(self, pattern: "Pattern | str") -> bool:
+        # Routed through find() (rather than calling the matcher directly)
+        # so exists() gets the same debug logging / save_annotated behavior
+        # as find()/find_all() for free — a single-shot exists() check is a
+        # common first thing someone tries with debug mode on, and it
+        # should show the same "what did the framework see" output.
         pattern = self._resolve_pattern(pattern)
-        image = self.capture_image()
-        return self.matcher.find_best(image, pattern) is not None
+        try:
+            self.find(pattern)
+            return True
+        except PatternNotFoundError:
+            return False
 
     def wait_for_appear(
         self,
@@ -160,6 +169,10 @@ class Region:
         timeout: float = DEFAULT_TIMEOUT,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
     ) -> None:
+        # Note: with save_annotated on, each poll tick where the pattern is
+        # still present writes an annotated capture (exists() -> find()) —
+        # a deliberate debug-mode trade-off (see it disappear frame-by-frame)
+        # rather than a leak; it's opt-in and bounded by timeout/poll_interval.
         pattern = self._resolve_pattern(pattern)
         deadline = time.monotonic() + timeout
         while self.exists(pattern):

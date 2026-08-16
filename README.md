@@ -100,6 +100,12 @@ from cvmate import Screen, DebugConfig
 screen = Screen(debug=DebugConfig(enabled=True, save_annotated=True))
 ```
 
+Turning on `CVMATE_DEBUG` prints to the console with no extra setup — a
+plain `logging.StreamHandler` is attached automatically the first time
+debug mode turns on (only if nothing else has already configured logging;
+your own `logging.basicConfig()` is always respected instead). `exists()`
+saves annotated captures too, not just `find()`/`find_all()`.
+
 ## GUI companion (optional)
 
 A Sikuli-IDE-style desktop app for writing scripts and capturing template

@@ -9,6 +9,7 @@ import cv2
 import pytest
 
 from cvmate.capture import CaptureBackend, MonitorInfo
+from cvmate.config import DebugConfig
 from cvmate.exceptions import CvMateTimeoutError, InvalidRegionError, PatternNotFoundError
 from cvmate.input import InputController
 from cvmate.pattern import Pattern
@@ -99,6 +100,23 @@ def test_exists_true_and_false():
 
     assert present.exists(_pattern()) is True
     assert absent.exists(_pattern()) is False
+
+
+def test_exists_saves_an_annotated_capture_like_find_does(tmp_path):
+    # Regression test: exists() used to call the matcher directly, bypassing
+    # find()'s save_annotated step entirely, so DebugConfig(save_annotated=True)
+    # silently did nothing for exists() — the exact bug reported after real
+    # GUI testing. exists() now routes through find(), so it gets the same
+    # observability for free.
+    debug = DebugConfig(enabled=True, save_annotated=True, annotated_output_dir=tmp_path)
+    region = Region(
+        0, 0, 260, 200,
+        capture=FakeCaptureBackend(_haystack("button_present.png")),
+        debug=debug,
+    )
+
+    assert region.exists(_pattern()) is True
+    assert list(tmp_path.iterdir()), "exists() should have saved an annotated capture"
 
 
 def test_find_click_chaining_dispatches_to_input_controller():

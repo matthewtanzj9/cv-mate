@@ -34,6 +34,36 @@ def get_logger() -> logging.Logger:
     return logger
 
 
+def ensure_visible_when_enabled(enabled: bool) -> None:
+    """Make debug logging actually show up when a caller turns debug mode
+    on, without requiring the host script to separately call
+    ``logging.basicConfig()``.
+
+    A ``NullHandler`` alone (see :func:`get_logger`) is deliberately silent
+    — the right default for a library — but that also means
+    ``DebugConfig(enabled=True)`` would produce *zero* visible output in a
+    plain script or a GUI-launched subprocess, since Python's logging module
+    drops DEBUG-level records before any handler sees them unless the
+    logger's effective level is lowered too. That defeats the entire point
+    of FR19's debug mode, so: the first time debug mode is turned on in a
+    process that hasn't configured its own logging, attach a simple
+    ``StreamHandler`` and set the level to DEBUG. If the host script *has*
+    already added its own handler (e.g. its own ``basicConfig`` call, or
+    embedding another app's logging setup), this leaves it alone — the
+    presence of any handler beyond the default ``NullHandler`` is taken as
+    "the host is already handling this."
+    """
+    if not enabled:
+        return
+    logger = get_logger()
+    only_null_handlers = all(isinstance(h, logging.NullHandler) for h in logger.handlers)
+    if only_null_handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(name)s %(levelname)s %(message)s"))
+        logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+
+
 def annotate(image: np.ndarray, matches: Iterable["MatchResult"]) -> np.ndarray:
     """Return a copy of ``image`` with a bounding box + confidence label
     drawn over each match, for visual "what did the framework see" debugging.
