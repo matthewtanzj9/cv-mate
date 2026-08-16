@@ -12,18 +12,23 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QCheckBox,
+    QDockWidget,
     QFileDialog,
     QMainWindow,
     QMessageBox,
     QPlainTextEdit,
     QSplitter,
+    QTextBrowser,
     QToolBar,
 )
 
+from .api_reference import render_api_reference_html
 from .capture_controller import CaptureController
 from .editor import ScriptEditor
 from .highlighter import PythonHighlighter
 from .run_controller import RunController
+
+API_REFERENCE_DOCK_WIDTH = 340
 
 WINDOW_TITLE_SUFFIX = " — cv-mate"
 
@@ -49,6 +54,7 @@ class MainWindow(QMainWindow):
         self.capture_controller = CaptureController(self.editor, self)
         self.run_controller = RunController(self)
 
+        self._build_api_reference_dock()
         self._build_menu()
         self._build_toolbar()
         self._wire_signals()
@@ -58,6 +64,26 @@ class MainWindow(QMainWindow):
         self.resize(900, 700)
 
     # -- construction ----------------------------------------------------------
+
+    def _build_api_reference_dock(self) -> None:
+        """A read-only "API Reference" panel docked to the right, showing
+        the cvmate scripting API (Screen/Region/Pattern/Match/... and their
+        methods) so a script author doesn't have to alt-tab to docs while
+        writing a script. Dockable/floatable/closable like any QDockWidget,
+        and toggle-able from the View menu (see _build_menu)."""
+        browser = QTextBrowser(self)
+        browser.setOpenExternalLinks(False)
+        browser.setHtml(render_api_reference_html())
+
+        self.api_reference_dock = QDockWidget("API Reference", self)
+        self.api_reference_dock.setWidget(browser)
+        self.api_reference_dock.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetClosable
+            | QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+        )
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.api_reference_dock)
+        self.resizeDocks([self.api_reference_dock], [API_REFERENCE_DOCK_WIDTH], Qt.Orientation.Horizontal)
 
     def _build_menu(self) -> None:
         file_menu = self.menuBar().addMenu("&File")
@@ -72,6 +98,9 @@ class MainWindow(QMainWindow):
             file_menu.addAction(action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
+
+        view_menu = self.menuBar().addMenu("&View")
+        view_menu.addAction(self.api_reference_dock.toggleViewAction())
 
     def _build_toolbar(self) -> None:
         toolbar = QToolBar("Main", self)
