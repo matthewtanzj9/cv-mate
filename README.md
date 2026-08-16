@@ -3,17 +3,27 @@
 A general-purpose, OpenCV-based gameplay automation framework: detect
 on-screen visual patterns and trigger mouse actions from a Sikuli-style
 scripting API. Conceptually similar to [Sikuli](http://www.sikuli.org/), with
-a few deliberate improvements — most notably multi-scale pattern matching
-(Sikuli only matches at a single fixed scale) and a first-class debug mode.
+a couple of deliberate improvements — multi-scale pattern matching (Sikuli
+only matches at a single fixed scale) and a first-class debug mode — plus an
+optional GUI companion app.
 
-> **v1 scope:** Windows 10/11 only, mouse automation only (no keyboard yet).
-> See `requirements`/architecture discussion for the full rationale.
+**Scope:** Windows 10/11, Python 3.10+, mouse automation only (no keyboard
+input yet — see [Extensibility](#extensibility)).
+
+- [Quick start](#quick-start)
+- [Core concepts](#core-concepts)
+- [Multi-scale matching](#multi-scale-matching)
+- [Debug mode](#debug-mode)
+- [GUI companion (optional)](#gui-companion-optional)
+- [Extensibility](#extensibility)
+- [Testing](#testing)
+- [Project layout](#project-layout)
 
 ## Quick start
 
-```bash
+```powershell
 python -m venv .venv
-.venv\Scripts\activate        # Windows
+.venv\Scripts\activate
 pip install -e .[dev]
 ```
 
@@ -26,10 +36,10 @@ ok_button = Pattern("ok_button.png", threshold=0.85)
 screen.wait_for_appear(ok_button, timeout=10.0).click()
 ```
 
-Run it standalone — no extra runtime or GUI tooling required:
+Scripts run standalone — no GUI or extra runtime required:
 
-```bash
-python examples/click_button.py
+```powershell
+python examples\click_button.py
 ```
 
 ## Core concepts
@@ -86,10 +96,10 @@ Pattern("hud_icon.png", scales=(1.0, 1.0), scale_steps=1)  # opt out
 Debug output is off by default and cheap to enable — set an environment
 variable, no code changes required:
 
-```bash
-set CVMATE_DEBUG=1          # verbose match logging
-set CVMATE_DEBUG_SAVE=1     # also save annotated screenshots of matches
-set CVMATE_DEBUG_DIR=out    # where annotated screenshots are saved
+```powershell
+$env:CVMATE_DEBUG = "1"        # verbose match logging
+$env:CVMATE_DEBUG_SAVE = "1"   # also save annotated screenshots of matches
+$env:CVMATE_DEBUG_DIR = "out"  # where annotated screenshots are saved
 ```
 
 Or per-script:
@@ -109,28 +119,30 @@ saves annotated captures too, not just `find()`/`find_all()`.
 ## GUI companion (optional)
 
 A Sikuli-IDE-style desktop app for writing scripts and capturing template
-images, without leaving the keyboard: open/edit/save/run plain `.py`
-scripts, and drag-select a region of your actual screen to save it as a
-template and auto-insert `Pattern("images/...")` at your cursor — e.g. type
-`screen.exists(`, invoke the capture tool, and it fills in
-`screen.exists(Pattern("images/ok_button.png"))` for you. Scripts stay
-ordinary Python using the same API described above; the GUI never replaces
-it. It's an optional extra — `pip install cvmate` alone never pulls in Qt.
+images without leaving the keyboard. Scripts stay ordinary Python using the
+API above — the GUI never replaces it. It's an optional extra;
+`pip install cvmate` alone never pulls in Qt.
 
-```bash
+```powershell
 pip install -e .[gui]
 cvmate-gui
 ```
 
+- **Editor**: open/edit/save/save-as plain `.py` scripts, with Python syntax
+  highlighting.
 - **Capture → script**: drag a rectangle on screen, name the template, and
   it's saved to an `images/` folder next to your open script (save the
   script first — that's where the tool knows to put things) and inserted
-  as a `Pattern(...)` snippet at your cursor.
+  as a `Pattern(...)` snippet at your cursor. Type `screen.exists(`, invoke
+  the capture tool, and it fills in
+  `screen.exists(Pattern("images/ok_button.png"))` for you.
 - **Run / Stop**: runs the saved script as a real subprocess (so a hung or
   crashing script never takes the editor down with it), streaming its
-  output live. "Debug" / "Save annotated" checkboxes just set
+  output live. The "Debug" / "Save annotated" checkboxes just set
   `CVMATE_DEBUG` / `CVMATE_DEBUG_SAVE` for that run — the same environment
   variables described above, no separate debug mechanism.
+- **API Reference panel**: a docked, always-available reference for the
+  scripting API (toggle via **View → API Reference**).
 
 ## Extensibility
 
@@ -145,7 +157,7 @@ Screen capture and mouse input each sit behind an abstract interface
 
 ## Testing
 
-```bash
+```powershell
 pytest tests/unit
 ```
 
@@ -157,9 +169,10 @@ under `tests/integration/` and are excluded from the default test run.
 GUI tests run headlessly too (no real display needed), via `pytest-qt`'s
 offscreen Qt platform:
 
-```bash
+```powershell
 pip install -e .[gui-dev]
-QT_QPA_PLATFORM=offscreen pytest tests/gui   # on Windows: set QT_QPA_PLATFORM=offscreen first
+$env:QT_QPA_PLATFORM = "offscreen"
+pytest tests/gui
 ```
 
 What's *not* covered headlessly — the capture overlay actually rendering
@@ -177,3 +190,7 @@ tests/gui/        headless (offscreen) unit tests for the GUI
 tests/assets/     small synthetic images used by the unit tests
 examples/         runnable example scripts
 ```
+
+## License
+
+[MIT](LICENSE)
