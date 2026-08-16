@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cvmate"
+version = "0.1.0"
+description = "A general-purpose, OpenCV-based gameplay automation framework: detect on-screen patterns and trigger mouse actions from a Sikuli-style scripting API."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "cv-mate contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "opencv-python>=4.8",
+    "numpy>=1.24",
+    "mss>=9.0",
+    "pydirectinput>=1.0; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+markers = ["integration: manual/OS-dependent tests, excluded from default runs"]
