@@ -12,9 +12,16 @@ import re
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtGui import QColor, QSyntaxHighlighter, QTextCharFormat
 
+from . import theme
+
 # Rules are applied in order; later rules (strings, comments) are applied
 # after keywords so a keyword-looking token inside a string/comment gets
 # re-colored correctly (comments/strings should win over bare keyword text).
+#
+# Colors come from theme.py (not hardcoded here) so the editor's syntax
+# coloring and the rest of the GUI's dark theme always agree with each
+# other — these are dark-background-tuned colors and need the matching
+# dark editor background theme.py's stylesheet applies.
 
 
 def _format(color: str, *, bold: bool = False) -> QTextCharFormat:
@@ -25,10 +32,10 @@ def _format(color: str, *, bold: bool = False) -> QTextCharFormat:
     return fmt
 
 
-KEYWORD_FORMAT = _format("#569CD6", bold=True)
-STRING_FORMAT = _format("#CE9178")
-COMMENT_FORMAT = _format("#6A9955")
-NUMBER_FORMAT = _format("#B5CEA8")
+KEYWORD_FORMAT = _format(theme.TOKEN_KEYWORD, bold=True)
+STRING_FORMAT = _format(theme.TOKEN_STRING)
+COMMENT_FORMAT = _format(theme.TOKEN_COMMENT)
+NUMBER_FORMAT = _format(theme.TOKEN_NUMBER)
 
 _KEYWORD_PATTERN = re.compile(r"\b(" + "|".join(keyword.kwlist) + r")\b")
 _NUMBER_PATTERN = QRegularExpression(r"\b[0-9]+(\.[0-9]+)?\b")

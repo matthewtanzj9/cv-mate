@@ -147,6 +147,10 @@ cvmate-gui
   `Pattern(...)` call your cursor is on/near refers to, live as you move
   around the script — no alt-tabbing to a file browser to remember what an
   icon looks like (toggle via **View → Template Preview**).
+- **Dark theme**: a monospace editor font and a dark color scheme the
+  syntax highlighter's colors are actually tuned for (`cvmate/gui/theme.py`
+  is the single source of truth both the app-wide stylesheet and the
+  highlighter draw from).
 
 ## Extensibility
 

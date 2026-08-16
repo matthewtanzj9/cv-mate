@@ -18,10 +18,12 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QSplitter,
+    QStyle,
     QTextBrowser,
     QToolBar,
 )
 
+from . import theme
 from .api_reference import render_api_reference_html
 from .capture_controller import CaptureController
 from .editor import ScriptEditor
@@ -39,11 +41,13 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.editor = ScriptEditor(self)
+        self.editor.setFont(theme.editor_font())
         self._highlighter = PythonHighlighter(self.editor.document())
 
         self.output_pane = QPlainTextEdit(self)
         self.output_pane.setReadOnly(True)
         self.output_pane.setPlaceholderText("Script output will appear here…")
+        self.output_pane.setFont(theme.editor_font())
 
         splitter = QSplitter(Qt.Orientation.Vertical, self)
         splitter.addWidget(self.editor)
@@ -103,12 +107,26 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.template_preview_dock)
         self.splitDockWidget(self.api_reference_dock, self.template_preview_dock, Qt.Orientation.Vertical)
 
+    def _std_icon(self, standard_pixmap: QStyle.StandardPixmap):
+        """A themed icon from the current Qt style — no bundled image
+        assets needed, and it matches whatever icon theme the OS is using."""
+        return self.style().standardIcon(standard_pixmap)
+
     def _build_menu(self) -> None:
         file_menu = self.menuBar().addMenu("&File")
 
-        new_action = QAction("&New", self, shortcut="Ctrl+N", triggered=self.new_file)
-        open_action = QAction("&Open…", self, shortcut="Ctrl+O", triggered=self.open_file)
-        save_action = QAction("&Save", self, shortcut="Ctrl+S", triggered=self.save_file)
+        new_action = QAction(
+            self._std_icon(QStyle.StandardPixmap.SP_FileIcon), "&New", self,
+            shortcut="Ctrl+N", triggered=self.new_file,
+        )
+        open_action = QAction(
+            self._std_icon(QStyle.StandardPixmap.SP_DialogOpenButton), "&Open…", self,
+            shortcut="Ctrl+O", triggered=self.open_file,
+        )
+        save_action = QAction(
+            self._std_icon(QStyle.StandardPixmap.SP_DialogSaveButton), "&Save", self,
+            shortcut="Ctrl+S", triggered=self.save_file,
+        )
         save_as_action = QAction("Save &As…", self, shortcut="Ctrl+Shift+S", triggered=self.save_file_as)
         exit_action = QAction("E&xit", self, shortcut="Ctrl+Q", triggered=self.close)
 
@@ -123,14 +141,24 @@ class MainWindow(QMainWindow):
 
     def _build_toolbar(self) -> None:
         toolbar = QToolBar("Main", self)
+        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.addToolBar(toolbar)
 
-        self.capture_action = QAction("Capture Template", self, triggered=self.capture_controller.start_capture)
+        self.capture_action = QAction(
+            self._std_icon(QStyle.StandardPixmap.SP_FileDialogContentsView),
+            "Capture Template", self, triggered=self.capture_controller.start_capture,
+        )
         toolbar.addAction(self.capture_action)
         toolbar.addSeparator()
 
-        self.run_action = QAction("Run", self, triggered=self._on_run_clicked)
-        self.stop_action = QAction("Stop", self, triggered=self.run_controller.stop)
+        self.run_action = QAction(
+            self._std_icon(QStyle.StandardPixmap.SP_MediaPlay), "Run", self,
+            triggered=self._on_run_clicked,
+        )
+        self.stop_action = QAction(
+            self._std_icon(QStyle.StandardPixmap.SP_MediaStop), "Stop", self,
+            triggered=self.run_controller.stop,
+        )
         self.stop_action.setEnabled(False)
         toolbar.addAction(self.run_action)
         toolbar.addAction(self.stop_action)
